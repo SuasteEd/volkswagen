@@ -36,6 +36,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   flutter_slidable: ^3.0.0
+  syncfusion_flutter_charts: ^21.2.5
+  searchfield: ^0.8.0
+  adaptive_scrollbar: ^2.1.2
+  quickalert: ^1.0.1
+  intl: ^0.18.1
   get: ^4.6.5
 
 dev_dependencies:

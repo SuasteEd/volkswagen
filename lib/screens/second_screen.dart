@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:quickalert/quickalert.dart';
 
 class SecondScreen extends StatefulWidget {
   const SecondScreen({Key? key}) : super(key: key);
@@ -9,6 +10,9 @@ class SecondScreen extends StatefulWidget {
 }
 
 class _SecondScreenState extends State<SecondScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final _reporte = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,9 +23,10 @@ class _SecondScreenState extends State<SecondScreen> {
           child: Column(
             children: [
               Expanded(
-                  child: ListView.builder(
-                itemCount: 10,
-                itemBuilder: (context, index) => Slidable(
+                  child: AnimatedList(
+                key: _listKey,
+                initialItemCount: 1,
+                itemBuilder: (context, index, animation) => Slidable(
                     startActionPane: ActionPane(
                       motion: ScrollMotion(),
                       children: [
@@ -29,6 +34,10 @@ class _SecondScreenState extends State<SecondScreen> {
                           onPressed: (context) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Aceptado')),
+                            );
+                            _listKey.currentState!.removeItem(
+                              index,
+                              (context, animation) => Container(),
                             );
                           },
                           label: 'Recibido',
@@ -41,8 +50,42 @@ class _SecondScreenState extends State<SecondScreen> {
                         ActionPane(motion: ScrollMotion(), children: [
                       SlidableAction(
                         onPressed: (context) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Rechazado')),
+                          QuickAlert.show(
+                            context: context,
+                            customAsset: 'assets/logo.png',
+                            backgroundColor: Colors.black12,
+                            // barrierDismissible: false,
+                            confirmBtnText: 'Enviar',
+                            title: 'Reporte',
+                            type: QuickAlertType.warning,
+                            text: 'Ingresa la razón del reporte',
+                            widget: Form(
+                              key: _formKey,
+                              child: TextFormField(
+                                keyboardType: TextInputType.name,
+                                controller: _reporte,
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.isEmpty ||
+                                      value.length < 3) {
+                                    return 'Ingrese una razón válida';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            onConfirmBtnTap: () async {
+                              if (_formKey.currentState!.validate()) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Reporte enviado')),
+                                );
+                                _listKey.currentState!.removeItem(
+                                  index,
+                                  (context, animation) => Container(),
+                                );
+                              }
+                            },
                           );
                         },
                         label: 'Reportar',
@@ -50,8 +93,10 @@ class _SecondScreenState extends State<SecondScreen> {
                         icon: Icons.close,
                       ),
                     ]),
-                    child: ListTile(
-                      title: Text('dato'),
+                    child: const Card(
+                      child: ListTile(
+                        title: Text('dato'),
+                      ),
                     )),
               ))
             ],

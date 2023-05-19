@@ -77,7 +77,13 @@ class Tools extends StatelessWidget {
         children: [
           Expanded(
               child: Container(
-            color: Colors.amber,
+            //color: Colors.amber,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Herramientas'),
+              ],
+            ),
           )),
           Expanded(
             flex: 8,
@@ -91,9 +97,35 @@ class Tools extends StatelessWidget {
                       leading: const Icon(Icons.build),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap: () {
-                        showAboutDialog(
-                          context: context,
-                        );
+                        showDialog(
+                            context: context,
+                            builder: (context) => Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  // child: Container(
+                                  //   width: 400,
+                                  //   height: 600,
+                                  //   decoration: BoxDecoration(
+                                  //     borderRadius: BorderRadius.circular(20),
+                                  //   ),
+                                  // ),
+                                  child: SizedBox(
+                                    width: 400,
+                                    height: 600,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'ITEM TITLE',
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ));
                       },
                     ),
                   );
@@ -115,7 +147,12 @@ class Materials extends StatelessWidget {
         children: [
           Expanded(
               child: Container(
-            color: Colors.amber,
+           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Materiales'),
+            ],
+           ),
           )),
           Expanded(
             flex: 8,

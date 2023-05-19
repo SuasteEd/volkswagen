@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:team_prot1/firebase/firebase_piezas.dart';
+import 'package:team_prot1/firebase/firebase_solicitudes.dart';
 
 class SecondScreen extends StatefulWidget {
   const SecondScreen({Key? key}) : super(key: key);
@@ -16,6 +18,7 @@ class _SecondScreenState extends State<SecondScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: const Text('Confirmar', style: TextStyle(color: Colors.black)),
         ),
@@ -23,82 +26,122 @@ class _SecondScreenState extends State<SecondScreen> {
           child: Column(
             children: [
               Expanded(
-                  child: AnimatedList(
-                key: _listKey,
-                initialItemCount: 1,
-                itemBuilder: (context, index, animation) => Slidable(
-                    startActionPane: ActionPane(
-                      motion: ScrollMotion(),
-                      children: [
-                        SlidableAction(
-                          onPressed: (context) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Aceptado')),
-                            );
-                            _listKey.currentState!.removeItem(
-                              index,
-                              (context, animation) => Container(),
-                            );
-                          },
-                          label: 'Recibido',
-                          backgroundColor: Colors.green,
-                          icon: Icons.check,
-                        ),
-                      ],
-                    ),
-                    endActionPane:
-                        ActionPane(motion: ScrollMotion(), children: [
-                      SlidableAction(
-                        onPressed: (context) {
-                          QuickAlert.show(
-                            context: context,
-                            customAsset: 'assets/logo.png',
-                            backgroundColor: Colors.black12,
-                            // barrierDismissible: false,
-                            confirmBtnText: 'Enviar',
-                            title: 'Reporte',
-                            type: QuickAlertType.warning,
-                            text: 'Ingresa la razón del reporte',
-                            widget: Form(
-                              key: _formKey,
-                              child: TextFormField(
-                                keyboardType: TextInputType.name,
-                                controller: _reporte,
-                                validator: (value) {
-                                  if (value == null ||
-                                      value.isEmpty ||
-                                      value.length < 3) {
-                                    return 'Ingrese una razón válida';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            onConfirmBtnTap: () async {
-                              if (_formKey.currentState!.validate()) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Reporte enviado')),
-                                );
-                                _listKey.currentState!.removeItem(
-                                  index,
-                                  (context, animation) => Container(),
-                                );
-                              }
-                            },
-                          );
-                        },
-                        label: 'Reportar',
-                        backgroundColor: Colors.red,
-                        icon: Icons.close,
-                      ),
-                    ]),
-                    child: const Card(
-                      child: ListTile(
-                        title: Text('dato'),
-                      ),
-                    )),
-              ))
+                  child: StreamBuilder(
+                      stream: FireStoreSolicitudes().getAllonProces(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError)
+                          return Text("No se pudo obtener información.");
+                        if (!snapshot.hasData) return Container();
+                        return ListView(
+                          children: snapshot.data!.docs
+                              .map((solicitud) => Slidable(
+                                  startActionPane: ActionPane(
+                                    motion: ScrollMotion(),
+                                    children: [
+                                      SlidableAction(
+                                        onPressed: (context) {
+                                          FireStoreSolicitudes()
+                                              .recibirSolicitur(solicitud.id);
+                                          Navigator.pop(context);
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text('Aceptado')),
+                                          );
+                                        },
+                                        label: 'Recibido',
+                                        backgroundColor: Colors.green,
+                                        icon: Icons.check,
+                                      ),
+                                    ],
+                                  ),
+                                  endActionPane: ActionPane(
+                                      motion: ScrollMotion(),
+                                      children: [
+                                        SlidableAction(
+                                          onPressed: (context) {
+                                            QuickAlert.show(
+                                              context: context,
+                                              customAsset: 'assets/logo.png',
+                                              backgroundColor: Colors.black12,
+                                              // barrierDismissible: false,
+                                              confirmBtnText: 'Enviar',
+                                              title: 'Reporte',
+                                              type: QuickAlertType.warning,
+                                              text:
+                                                  'Ingresa la razón del reporte',
+                                              widget: Form(
+                                                key: _formKey,
+                                                child: TextFormField(
+                                                  keyboardType:
+                                                      TextInputType.name,
+                                                  controller: _reporte,
+                                                  validator: (value) {
+                                                    if (value == null ||
+                                                        value.isEmpty ||
+                                                        value.length < 3) {
+                                                      return 'Ingrese una razón válida';
+                                                    }
+                                                    return null;
+                                                  },
+                                                ),
+                                              ),
+                                              onConfirmBtnTap: () async {
+                                                if (_formKey.currentState!
+                                                    .validate()) {
+                                                  FireStoreSolicitudes()
+                                                      .reportarSolicitud(
+                                                          solicitud.id,
+                                                          _reporte.text);
+                                                  Navigator.pop(context);
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                        content: Text(
+                                                            'Reporte enviado')),
+                                                  );
+                                                }
+                                              },
+                                            );
+                                          },
+                                          label: 'Reportar',
+                                          backgroundColor: Colors.red,
+                                          icon: Icons.close,
+                                        ),
+                                      ]),
+                                  child: Card(
+                                    child: ListTile(
+                                      title: Text(
+                                          "id pieza ${solicitud["id_pieza"]}"),
+                                      subtitle: StreamBuilder(
+                                          stream: FireStorePiezas()
+                                              .get(solicitud["id_pieza"]),
+                                          builder: (context, pieza) {
+                                            if (pieza.hasError)
+                                              return Text(
+                                                  "Pieza no encontrada");
+                                            if (!pieza.hasData)
+                                              return Container();
+                                            if (!pieza.data!.exists)
+                                              return Text("Pieza no existe.");
+                                            return Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                    "${pieza.data!['nombre']}"),
+                                                Text(
+                                                    "Cantidad: ${solicitud['cantidad']}")
+                                              ],
+                                            );
+                                          }),
+                                      leading: const Icon(Icons.settings),
+                                    ),
+                                  )))
+                              .toList(),
+                        );
+                      }))
             ],
           ),
         ));

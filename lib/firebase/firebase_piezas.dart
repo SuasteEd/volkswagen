@@ -5,18 +5,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class FireStorePiezas {
-  final CollectionReference _piezaCollection =
-      FirebaseFirestore.instance.collection('piezas');
-  Stream<QuerySnapshot<Object?>> getAllHerramientas() {
-    return _piezaCollection.where("tipo", isEqualTo: 1).snapshots();
-  }
-
-  Stream<QuerySnapshot<Object?>> getAllMaterial() {
-    return _piezaCollection.where("tipo", isEqualTo: 0).snapshots();
+  final CollectionReference _maquinaCollection =
+      FirebaseFirestore.instance.collection('maquinas');
+  Stream<QuerySnapshot<Object?>> getAll() {
+    return _maquinaCollection.snapshots();
   }
 
   Stream<DocumentSnapshot<Object?>> get(String id) {
-    return _piezaCollection.doc(id).snapshots();
+    return _maquinaCollection.doc(id).snapshots();
   }
   /*get mensajes {
     return chatCollection

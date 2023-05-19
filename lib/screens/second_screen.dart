@@ -112,27 +112,27 @@ class _SecondScreenState extends State<SecondScreen> {
                                   child: Card(
                                     child: ListTile(
                                       title: Text(
-                                          "id pieza ${solicitud["id_pieza"]}"),
+                                          "id maquina ${solicitud["id_maquina"]}"),
                                       subtitle: StreamBuilder(
                                           stream: FireStorePiezas()
-                                              .get(solicitud["id_pieza"]),
-                                          builder: (context, pieza) {
-                                            if (pieza.hasError)
+                                              .get(solicitud["id_maquina"]),
+                                          builder: (context, maquina) {
+                                            if (maquina.hasError)
                                               return Text(
-                                                  "Pieza no encontrada");
-                                            if (!pieza.hasData)
+                                                  "maquina no encontrada");
+                                            if (!maquina.hasData)
                                               return Container();
-                                            if (!pieza.data!.exists)
-                                              return Text("Pieza no existe.");
+                                            if (!maquina.data!.exists)
+                                              return Text("maquina no existe.");
                                             return Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
                                                 Text(
-                                                    "${pieza.data!['nombre']}"),
+                                                    "${maquina.data!['nombre']}"),
                                                 Text(
-                                                    "Cantidad: ${solicitud['cantidad']}")
+                                                    "Problema: ${solicitud['problema']}")
                                               ],
                                             );
                                           }),

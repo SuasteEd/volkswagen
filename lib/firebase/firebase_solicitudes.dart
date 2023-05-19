@@ -2,16 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FireStoreSolicitudes {
   final CollectionReference _solicitudCollection =
-      FirebaseFirestore.instance.collection('solicitudes');
-  Future<bool> create(int cantidad, String celulaSolicitud, String comentarios,
-      String idPieza) async {
+      FirebaseFirestore.instance.collection('solicitudes_maquinas');
+  Future<bool> create(String problema, String celulaSolicitud,
+      String comentarios, String idMaquina) async {
     try {
       _solicitudCollection.add({
-        "cantidad": cantidad,
+        "problema": problema,
         "celula_solicitud": celulaSolicitud,
         "comentarios": comentarios,
         "estatus": 0,
-        "id_pieza": idPieza,
+        "id_maquina": idMaquina,
         "id_teamlead": "1",
         "solicitud_at": FieldValue.serverTimestamp()
       });

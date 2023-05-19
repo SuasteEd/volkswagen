@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:team_prot1/firebase/firebase_piezas.dart';
 import 'package:team_prot1/firebase/firebase_solicitudes.dart';
 
@@ -75,6 +76,7 @@ class Tools extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
     return Center(
       child: Column(
         children: [
@@ -106,81 +108,40 @@ class Tools extends StatelessWidget {
                         trailing: const Icon(Icons.arrow_forward_ios),
                         onTap: () {
                           var controller = TextEditingController();
-                          showDialog(
-                              context: context,
-                              builder: (context) => Dialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    // child: Container(
-                                    //   width: 400,
-                                    //   height: 600,
-                                    //   decoration: BoxDecoration(
-                                    //     borderRadius: BorderRadius.circular(20),
-                                    //   ),
-                                    // ),
-                                    child: SizedBox(
-                                      width: 400,
-                                      height: 600,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            e["nombre"],
-                                            style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.max,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  "¿Cuántos se requieren?",
-                                                  style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                      color: Colors.black54),
-                                                ),
-                                                TextField(
-                                                  controller: controller,
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                  inputFormatters: [
-                                                    FilteringTextInputFormatter
-                                                        .digitsOnly
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          MaterialButton(
-                                            onPressed: () {
-                                              FireStoreSolicitudes().create(
-                                                  int.tryParse(
-                                                          controller.text) ??
-                                                      0,
-                                                  "1",
-                                                  "",
-                                                  e.id);
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                              "Enviar",
-                                              style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w300,
-                                                  color: Colors.blue),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ));
+                          QuickAlert.show(
+                            context: context,
+                            customAsset: 'assets/logo.png',
+                            backgroundColor: Colors.black12,
+                            // barrierDismissible: false,
+                            confirmBtnText: 'Enviar',
+                            title: e['nombre'],
+                            type: QuickAlertType.warning,
+                            text: 'Ingresa la cantidad que necesitas',
+                            widget: Form(
+                              key: _formKey,
+                              child: TextFormField(
+                                keyboardType: TextInputType.number,
+                                controller: controller,
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.isEmpty) {
+                                    return 'Ingresa la cantidad que necesitas';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            onConfirmBtnTap: () async {
+                              if (_formKey.currentState!.validate()) {
+                                FireStoreSolicitudes().create(
+                                    int.tryParse(controller.text) ?? 0,
+                                    "1",
+                                    "",
+                                    e.id);
+                                Navigator.pop(context);
+                              }
+                            },
+                          );
                         },
                       ),
                     );

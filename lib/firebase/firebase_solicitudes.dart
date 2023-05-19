@@ -30,7 +30,7 @@ class FireStoreSolicitudes {
   recibirSolicitur(String id) {
     _solicitudCollection
         .doc(id)
-        .set({"estatus": 1, "result_at": FieldValue.serverTimestamp()});
+        .update({"estatus": 1, "result_at": FieldValue.serverTimestamp()});
   }
 
   reportarSolicitud(String id, String comentarios) {

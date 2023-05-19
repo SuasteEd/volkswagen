@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:team_prot1/firebase/firebase_maq.dart';
 import 'package:team_prot1/firebase/firebase_piezas.dart';
 import 'package:team_prot1/firebase/firebase_solicitudes.dart';
+import 'package:team_prot1/firebase/firebase_solicitudes_maqu.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,8 +17,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final List<Widget> _children = [
-    const Tools(),
-    const Materials(),
+    Tools(),
+    Materials(),
   ];
   @override
   Widget build(BuildContext context) {
@@ -24,28 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
           title: const Text(
             'Volkswagen',
             style: TextStyle(color: Colors.black),
-          ),
-        ),
-        drawer: Drawer(
-          child: SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 20,
-                ),
-                Image.asset('assets/logo.png', width: 200, height: 200),
-                const SizedBox(
-                  height: 20,
-                ),
-                ListTile(
-                  title: const Text('Confirmar'),
-                  leading: const Icon(Icons.person),
-                  onTap: () {
-                    Navigator.of(context).pushNamed('second');
-                  },
-                ),
-              ],
-            ),
           ),
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -58,10 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.build),
-              label: 'Herramientas',
+              label: 'Maquinas',
             ),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), label: 'Materiales'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'piezas'),
           ],
         ),
         body: IndexedStack(
@@ -72,8 +52,11 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class Tools extends StatelessWidget {
-  const Tools({Key? key}) : super(key: key);
+  Tools({Key? key}) : super(key: key);
 
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final _reporte = TextEditingController();
   @override
   Widget build(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
@@ -91,63 +74,112 @@ class Tools extends StatelessWidget {
             ),
           )),
           Expanded(
-            flex: 8,
-            child: StreamBuilder(
-                stream: FireStorePiezas().getAllHerramientas(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError)
-                    return Text("No se pudo obtener información.");
-                  if (!snapshot.hasData) return Container();
-                  return ListView(
-                      children: snapshot.data!.docs.map((e) {
-                    return Card(
-                      child: ListTile(
-                        title: Text('Id: ${e.id}'),
-                        subtitle: Text('${e["nombre"]}'),
-                        leading: const Icon(Icons.build),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () {
-                          var controller = TextEditingController();
-                          QuickAlert.show(
-                            context: context,
-                            customAsset: 'assets/logo.png',
-                            backgroundColor: Colors.black12,
-                            // barrierDismissible: false,
-                            confirmBtnText: 'Enviar',
-                            title: e['nombre'],
-                            type: QuickAlertType.warning,
-                            text: 'Ingresa la cantidad que necesitas',
-                            widget: Form(
-                              key: _formKey,
-                              child: TextFormField(
-                                keyboardType: TextInputType.number,
-                                controller: controller,
-                                validator: (value) {
-                                  if (value == null ||
-                                      value.isEmpty) {
-                                    return 'Ingresa la cantidad que necesitas';
-                                  }
-                                  return null;
-                                },
+              child: StreamBuilder(
+                  stream: FireStoreSolicitudesMaq().getAllonProces(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError)
+                      return Text("No se pudo obtener información.");
+                    if (!snapshot.hasData) return Container();
+                    return ListView(
+                      children: snapshot.data!.docs
+                          .map((solicitud) => Slidable(
+                              startActionPane: ActionPane(
+                                motion: ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (context) {
+                                      FireStoreSolicitudesMaq()
+                                          .recibirSolicitur(solicitud.id);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Aceptado')),
+                                      );
+                                    },
+                                    label: 'Recibido',
+                                    backgroundColor: Colors.green,
+                                    icon: Icons.check,
+                                  ),
+                                ],
                               ),
-                            ),
-                            onConfirmBtnTap: () async {
-                              if (_formKey.currentState!.validate()) {
-                                FireStoreSolicitudes().create(
-                                    int.tryParse(controller.text) ?? 0,
-                                    "1",
-                                    "",
-                                    e.id);
-                                Navigator.pop(context);
-                              }
-                            },
-                          );
-                        },
-                      ),
+                              endActionPane:
+                                  ActionPane(motion: ScrollMotion(), children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    QuickAlert.show(
+                                      context: context,
+                                      customAsset: 'assets/logo.png',
+                                      backgroundColor: Colors.black12,
+                                      // barrierDismissible: false,
+                                      confirmBtnText: 'Enviar',
+                                      title: 'Reporte',
+                                      type: QuickAlertType.warning,
+                                      text: 'Ingresa la razón del reporte',
+                                      widget: Form(
+                                        key: _formKey,
+                                        child: TextFormField(
+                                          keyboardType: TextInputType.name,
+                                          controller: _reporte,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty ||
+                                                value.length < 3) {
+                                              return 'Ingrese una razón válida';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      onConfirmBtnTap: () async {
+                                        if (_formKey.currentState!.validate()) {
+                                          FireStoreSolicitudesMaq()
+                                              .reportarSolicitud(
+                                                  solicitud.id, _reporte.text);
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content:
+                                                    Text('Reporte enviado')),
+                                          );
+                                        }
+                                      },
+                                    );
+                                  },
+                                  label: 'Reportar',
+                                  backgroundColor: Colors.red,
+                                  icon: Icons.close,
+                                ),
+                              ]),
+                              child: Card(
+                                child: ListTile(
+                                  title: Text(
+                                      "id maquina ${solicitud["id_maquina"]}"),
+                                  subtitle: StreamBuilder(
+                                      stream: FireStoreMaq()
+                                          .get(solicitud["id_maquina"]),
+                                      builder: (context, maquina) {
+                                        if (maquina.hasError)
+                                          return Text("maquina no encontrada");
+                                        if (!maquina.hasData)
+                                          return Container();
+                                        if (!maquina.data!.exists)
+                                          return Text("maquina no existe.");
+                                        return Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text("${maquina.data!['nombre']}"),
+                                            Text(
+                                                "Problema: ${solicitud['problema']}")
+                                          ],
+                                        );
+                                      }),
+                                  leading: const Icon(Icons.settings),
+                                ),
+                              )))
+                          .toList(),
                     );
-                  }).toList());
-                }),
-          ),
+                  })),
         ],
       ),
     );
@@ -155,8 +187,11 @@ class Tools extends StatelessWidget {
 }
 
 class Materials extends StatelessWidget {
-  const Materials({Key? key}) : super(key: key);
+  Materials({Key? key}) : super(key: key);
 
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final _reporte = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -172,104 +207,111 @@ class Materials extends StatelessWidget {
             ),
           )),
           Expanded(
-            flex: 8,
-            child: StreamBuilder(
-                stream: FireStorePiezas().getAllMaterial(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError)
-                    return Text("No se pudo obtener información.");
-                  if (!snapshot.hasData) return Container();
-                  return ListView(
-                      children: snapshot.data!.docs.map((e) {
-                    return Card(
-                      child: ListTile(
-                        title: Text('Id: ${e.id}'),
-                        subtitle: Text('${e["nombre"]}'),
-                        leading: const Icon(Icons.build),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () {
-                          var controller = TextEditingController();
-                          showDialog(
-                              context: context,
-                              builder: (context) => Dialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    // child: Container(
-                                    //   width: 400,
-                                    //   height: 600,
-                                    //   decoration: BoxDecoration(
-                                    //     borderRadius: BorderRadius.circular(20),
-                                    //   ),
-                                    // ),
-                                    child: SizedBox(
-                                      width: 400,
-                                      height: 600,
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            e["nombre"],
-                                            style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.max,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  "¿Cuántos se requieren?",
-                                                  style: TextStyle(
-                                                      fontSize: 20,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                      color: Colors.black54),
-                                                ),
-                                                TextField(
-                                                  controller: controller,
-                                                  keyboardType:
-                                                      TextInputType.number,
-                                                  inputFormatters: [
-                                                    FilteringTextInputFormatter
-                                                        .digitsOnly
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          MaterialButton(
-                                            onPressed: () {
-                                              FireStoreSolicitudes().create(
-                                                  int.tryParse(
-                                                          controller.text) ??
-                                                      0,
-                                                  "1",
-                                                  "",
-                                                  e.id);
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                              "Enviar",
-                                              style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w300,
-                                                  color: Colors.blue),
-                                            ),
-                                          )
-                                        ],
+              child: StreamBuilder(
+                  stream: FireStoreSolicitudes().getAllonProces(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError)
+                      return Text("No se pudo obtener información.");
+                    if (!snapshot.hasData) return Container();
+                    return ListView(
+                      children: snapshot.data!.docs
+                          .map<Widget>((solicitud) => Slidable(
+                              startActionPane: ActionPane(
+                                motion: ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (context) {
+                                      FireStoreSolicitudes()
+                                          .recibirSolicitur(solicitud.id);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Aceptado')),
+                                      );
+                                    },
+                                    label: 'Recibido',
+                                    backgroundColor: Colors.green,
+                                    icon: Icons.check,
+                                  ),
+                                ],
+                              ),
+                              endActionPane:
+                                  ActionPane(motion: ScrollMotion(), children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    QuickAlert.show(
+                                      context: context,
+                                      customAsset: 'assets/logo.png',
+                                      backgroundColor: Colors.black12,
+                                      // barrierDismissible: false,
+                                      confirmBtnText: 'Enviar',
+                                      title: 'Reporte',
+                                      type: QuickAlertType.warning,
+                                      text: 'Ingresa la razón del reporte',
+                                      widget: Form(
+                                        key: _formKey,
+                                        child: TextFormField(
+                                          keyboardType: TextInputType.name,
+                                          controller: _reporte,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty ||
+                                                value.length < 3) {
+                                              return 'Ingrese una razón válida';
+                                            }
+                                            return null;
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                  ));
-                        },
-                      ),
+                                      onConfirmBtnTap: () async {
+                                        if (_formKey.currentState!.validate()) {
+                                          FireStoreSolicitudes()
+                                              .reportarSolicitud(
+                                                  solicitud.id, _reporte.text);
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content:
+                                                    Text('Reporte enviado')),
+                                          );
+                                        }
+                                      },
+                                    );
+                                  },
+                                  label: 'Reportar',
+                                  backgroundColor: Colors.red,
+                                  icon: Icons.close,
+                                ),
+                              ]),
+                              child: Card(
+                                child: ListTile(
+                                  title:
+                                      Text("id pieza ${solicitud["id_pieza"]}"),
+                                  subtitle: StreamBuilder(
+                                      stream: FireStorePiezas()
+                                          .get(solicitud["id_pieza"]),
+                                      builder: (context, pieza) {
+                                        if (pieza.hasError)
+                                          return Text("Pieza no encontrada");
+                                        if (!pieza.hasData) return Container();
+                                        if (!pieza.data!.exists)
+                                          return Text("Pieza no existe.");
+                                        return Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text("${pieza.data!['nombre']}"),
+                                            Text(
+                                                "Cantidad: ${solicitud['cantidad']}")
+                                          ],
+                                        );
+                                      }),
+                                  leading: const Icon(Icons.settings),
+                                ),
+                              )))
+                          .toList(),
                     );
-                  }).toList());
-                }),
-          ),
+                  })),
         ],
       ),
     );
